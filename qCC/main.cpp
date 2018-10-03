@@ -17,6 +17,8 @@
 
 #include <ccIncludeGL.h>
 
+#include <memory>
+
 //Qt
 #include <QDir>
 #include <QSplashScreen>
@@ -58,8 +60,14 @@ int main(int argc, char **argv)
 
 	//Command line mode?
 	bool commandLine = (argc > 1 && argv[1][0] == '-');
-	
-	ccApplication app(argc, argv);
+
+	// ccApplication crashes on init if GLX is unavailable, so in command line
+	// mode, use QCoreApplication instead so it can be used without an X11.
+	std::unique_ptr<QCoreApplication> app(
+		commandLine ?
+			new QCoreApplication(argc, argv) :
+			new ccApplication(argc, argv)
+	);
 
 	//store the log message until a valid logging instance is registered
 	ccLog::EnableMessageBackup(true);
@@ -230,7 +238,7 @@ int main(int argc, char **argv)
 		//let's rock!
 		try
 		{
-			result = app.exec();
+			result = app->exec();
 		}
 		catch (const std::exception& e)
 		{
